@@ -201,7 +201,9 @@ const WorkShiftInfographic: React.FC<WorkShiftInfographicProps> = ({ onEditTask,
   return (
     <Flex 
       direction="column" 
-      w={layout === 'vertical' ? '100%' : '320px'} 
+      w={layout === 'vertical' ? '100%' : { base: 'min(320px, 30%)', md: '320px' }}
+      minW={layout === 'horizontal' ? '280px' : 'auto'}
+      maxW={layout === 'horizontal' ? '320px' : '100%'}
       px={3} 
       py={3} 
       bg="gray.800" 
@@ -209,6 +211,8 @@ const WorkShiftInfographic: React.FC<WorkShiftInfographicProps> = ({ onEditTask,
       borderTop={layout === 'vertical' ? '1px solid' : 'none'}
       borderColor="whiteAlpha.100" 
       gap={3}
+      overflowY="auto"
+      overflowX="hidden"
     >
       <Flex align="center" justify="space-between" gap={2}>
         <Flex align="center" gap={2}>

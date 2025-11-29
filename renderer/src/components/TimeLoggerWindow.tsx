@@ -576,11 +576,13 @@ const TimeLoggerWindow = () => {
         <TitleBar />
         
         {layout === 'horizontal' ? (
-          <Flex flex={1} h="calc(100% - 32px)" bg="gray.900">
+          <Flex flex={1} h="calc(100% - 32px)" bg="gray.900" overflow="hidden">
             {/* Left Sidebar - Control Buttons */}
             <Flex 
               direction="column" 
               w="48px" 
+              minW="48px"
+              flexShrink={0}
               bg="gray.800" 
               borderRight="1px solid" 
               borderColor="whiteAlpha.100"
@@ -751,13 +753,13 @@ const TimeLoggerWindow = () => {
               </Box>
 
               {/* Timer Display */}
-              <Flex flex={1} direction="column" justify="center" align="center" gap={3}>
-                <Text fontSize="6xl" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" color="white" letterSpacing="0.05em" textAlign="center">
+              <Flex flex={1} direction="column" justify="center" align="center" gap={3} minH={0} overflow="hidden">
+                <Text fontSize="6xl" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" color="white" letterSpacing="0.05em" textAlign="center" whiteSpace="nowrap">
                   {taskTimerService.formatDuration(currentTime)}
                 </Text>
                 
                 {/* Progress Bar */}
-                <Box w="100%" maxW="600px" h="8px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden">
+                <Box w="100%" maxW="600px" h="8px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden" flexShrink={0}>
                   <Box
                     h="100%"
                     w={`${progressPercent}%`}
@@ -767,24 +769,26 @@ const TimeLoggerWindow = () => {
                   />
                 </Box>
 
-                {/* Task Identifier */}
-                {taskName && (
-                  <Flex align="center" gap={2}>
-                    <Text fontSize="sm" color="gray.400">
-                      ({taskName})
-                    </Text>
-                    {timerState.currentTask?.id && (
-                      <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm">
-                        {timerState.currentTask.id.slice(-3)}
-                      </Badge>
-                    )}
-                  </Flex>
-                )}
-              </Flex>
+              {/* Task Identifier */}
+              {taskName && (
+                <Flex align="center" gap={2} flexShrink={0}>
+                  <Text fontSize="sm" color="gray.400" noOfLines={1}>
+                    ({taskName})
+                  </Text>
+                  {timerState.currentTask?.id && (
+                    <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm" flexShrink={0}>
+                      {timerState.currentTask.id.slice(-3)}
+                    </Badge>
+                  )}
+                </Flex>
+              )}
             </Flex>
+          </Flex>
 
-            {/* Right Panel - Summary */}
+          {/* Right Panel - Summary */}
+          <Box flexShrink={0}>
             <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
+          </Box>
           </Flex>
         ) : (
           <Flex flex={1} h="calc(100% - 32px)" bg="gray.900" direction="column">
@@ -905,26 +909,28 @@ const TimeLoggerWindow = () => {
                   />
                 </Box>
 
-                {/* Task Identifier */}
-                {taskName && (
-                  <Flex align="center" gap={2}>
-                    <Text fontSize="sm" color="gray.400">
-                      ({taskName})
-                    </Text>
-                    {timerState.currentTask?.id && (
-                      <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm">
-                        {timerState.currentTask.id.slice(-3)}
-                      </Badge>
-                    )}
-                  </Flex>
-                )}
-              </Flex>
+              {/* Task Identifier */}
+              {taskName && (
+                <Flex align="center" gap={2} flexShrink={0}>
+                  <Text fontSize="sm" color="gray.400" noOfLines={1}>
+                    ({taskName})
+                  </Text>
+                  {timerState.currentTask?.id && (
+                    <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm" flexShrink={0}>
+                      {timerState.currentTask.id.slice(-3)}
+                    </Badge>
+                  )}
+                </Flex>
+              )}
             </Flex>
+          </Flex>
 
             {/* Bottom Control Buttons - Horizontal Bar */}
             <Flex 
               direction="row" 
               h="48px" 
+              minH="48px"
+              flexShrink={0}
               bg="gray.800" 
               borderTop="1px solid" 
               borderColor="whiteAlpha.100"
@@ -995,7 +1001,9 @@ const TimeLoggerWindow = () => {
             </Flex>
 
             {/* WorkShiftInfographic - Full Width Below */}
-            <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
+            <Box flexShrink={0} overflowY="auto" overflowX="hidden">
+              <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
+            </Box>
           </Flex>
         )}
       </Box>
