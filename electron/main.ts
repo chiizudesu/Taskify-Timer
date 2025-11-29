@@ -94,17 +94,53 @@ const calculateWindowDimensions = (layout: 'horizontal' | 'vertical', windowBoun
   }
 };
 
+// Validate work area RECT structure
+function isValidWorkArea(rect: { left: number; top: number; right: number; bottom: number }, screenBounds: { x: number; y: number; width: number; height: number }): boolean {
+  const minSize = 200; // Minimum usable width/height
+  return (
+    rect.left >= screenBounds.x &&
+    rect.top >= screenBounds.y &&
+    rect.right > rect.left &&
+    rect.bottom > rect.top &&
+    rect.right <= (screenBounds.x + screenBounds.width) &&
+    rect.bottom <= (screenBounds.y + screenBounds.height) &&
+    (rect.right - rect.left) >= minSize &&
+    (rect.bottom - rect.top) >= minSize
+  );
+}
+
+// Use Electron's window management as primary approach (more reliable)
+function useWindowLevelPositioning(window: BrowserWindow) {
+  console.log('[WorkArea] Using window-level positioning (alwaysOnTop + toolbar type)');
+  
+  // Set window to always stay on top
+  window.setAlwaysOnTop(true, 'screen-saver');
+  
+  // Make window visible on all workspaces
+  window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  
+  // On Windows, use skipTaskbar: false to make it more system-integrated
+  if (process.platform === 'win32') {
+    window.setSkipTaskbar(false);
+  }
+  
+  console.log('[WorkArea] Window-level positioning applied');
+}
+
 // Reserve Windows work area so maximized windows don't cover the timer
 // Uses SystemParametersInfo(SPI_SETWORKAREA) via ffi-rs (Rust-based FFI)
+// Falls back to window-level positioning if system work area modification fails
 async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 'vertical') {
   if (process.platform !== 'win32') {
     console.log('[WorkArea] Work area reservation only supported on Windows');
+    useWindowLevelPositioning(window);
     return;
   }
 
+  // Try system-level work area modification first, fallback to window-level if it fails
   if (!ffiRs) {
-    console.log('[WorkArea] ffi-rs not available - work area reservation disabled');
-    console.log('[WorkArea] Install with: npm install ffi-rs (requires Rust toolchain)');
+    console.log('[WorkArea] ffi-rs not available - using window-level positioning');
+    useWindowLevelPositioning(window);
     return;
   }
 
@@ -112,16 +148,18 @@ async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 've
     const bounds = window.getBounds();
     const display = screen.getDisplayNearestPoint({ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 });
     const workArea = display.workArea;
-    
-    // Store original work area in screen coordinates if not already stored
     const screenBounds = display.bounds;
+    
+    // Store original work area - use the CURRENT work area (not full screen bounds)
+    // This is what Windows currently has set, which we want to restore later
     if (!originalWorkArea) {
       originalWorkArea = {
-        x: screenBounds.x,
-        y: screenBounds.y,
-        width: screenBounds.width,
-        height: screenBounds.height
+        x: workArea.x,
+        y: workArea.y,
+        width: workArea.width,
+        height: workArea.height
       };
+      console.log('[WorkArea] Stored original work area:', originalWorkArea);
     }
     
     // Check if window is at screen edge (within 5px tolerance)
@@ -131,26 +169,78 @@ async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 've
     const isAtBottomEdge = Math.abs((bounds.y + bounds.height) - (screenBounds.y + screenBounds.height)) < 5;
     
     // Calculate new work area in screen coordinates (SPI_SETWORKAREA expects screen coords)
+    // Start with the CURRENT work area, then adjust it
+    const screenLeft = screenBounds.x;
+    const screenTop = screenBounds.y;
+    const screenRight = screenBounds.x + screenBounds.width;
+    const screenBottom = screenBounds.y + screenBounds.height;
+    
+    // Use current work area as base (this respects existing taskbar/other UI)
+    // RECT structure uses left, top, right, bottom (not width/height)
     let newWorkAreaRect = {
-      left: screenBounds.x,
-      top: screenBounds.y,
-      right: screenBounds.x + screenBounds.width,
-      bottom: screenBounds.y + screenBounds.height
+      left: workArea.x,
+      top: workArea.y,
+      right: workArea.x + workArea.width,
+      bottom: workArea.y + workArea.height
     };
     
     if (layout === 'horizontal' && isAtTopEdge) {
       // Reserve space at top for horizontal layout
-      newWorkAreaRect.top = screenBounds.y + bounds.height;
-      console.log('[WorkArea] Reserving top area for horizontal layout:', { reservedHeight: bounds.height, newWorkAreaRect });
+      // Adjust the work area to exclude the timer window height
+      const newTop = workArea.y + bounds.height;
+      // Ensure work area is valid and within screen bounds
+      if (newTop < workArea.y + workArea.height && newTop > workArea.y) {
+        newWorkAreaRect.top = newTop;
+        // Keep right and bottom the same, just adjust top
+        console.log('[WorkArea] Reserving top area for horizontal layout:', { 
+          reservedHeight: bounds.height, 
+          originalWorkArea: { x: workArea.x, y: workArea.y, width: workArea.width, height: workArea.height },
+          newWorkAreaRect,
+          screenBounds 
+        });
+      } else {
+        console.warn('[WorkArea] Invalid work area calculation, skipping reservation');
+        useWindowLevelPositioning(window);
+        return;
+      }
     } else if (layout === 'vertical' && isAtLeftEdge) {
       // Reserve space at left for vertical layout
-      newWorkAreaRect.left = screenBounds.x + bounds.width;
-      console.log('[WorkArea] Reserving left area for vertical layout:', { reservedWidth: bounds.width, newWorkAreaRect });
+      // Adjust the work area to exclude the timer window width
+      const newLeft = workArea.x + bounds.width;
+      // Ensure work area is valid and within screen bounds
+      if (newLeft < workArea.x + workArea.width && newLeft > workArea.x) {
+        newWorkAreaRect.left = newLeft;
+        // Keep top and bottom the same, just adjust left
+        console.log('[WorkArea] Reserving left area for vertical layout:', { 
+          reservedWidth: bounds.width,
+          originalWorkArea: { x: workArea.x, y: workArea.y, width: workArea.width, height: workArea.height },
+          newWorkAreaRect,
+          screenBounds 
+        });
+      } else {
+        console.warn('[WorkArea] Invalid work area calculation, skipping reservation');
+        useWindowLevelPositioning(window);
+        return;
+      }
     } else {
       // Window not at edge, restore work area if previously reserved
       if (workAreaReserved) {
         await restoreWorkArea();
       }
+      return;
+    }
+    
+    // Final validation: ensure RECT coordinates are valid
+    if (newWorkAreaRect.left >= newWorkAreaRect.right || newWorkAreaRect.top >= newWorkAreaRect.bottom) {
+      console.error('[WorkArea] Invalid RECT after calculation:', newWorkAreaRect);
+      useWindowLevelPositioning(window);
+      return;
+    }
+    
+    // Validate RECT structure
+    if (!isValidWorkArea(newWorkAreaRect, screenBounds)) {
+      console.warn('[WorkArea] Invalid work area dimensions, using window-level positioning:', newWorkAreaRect);
+      useWindowLevelPositioning(window);
       return;
     }
     
@@ -209,7 +299,7 @@ async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 've
         SPI_SETWORKAREA,
         0,
         rectPointer[0],  // Use the created pointer
-        SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
+        0x03  // SPIF_UPDATEINIFILE | SPIF_SENDCHANGE (combined flags)
       ]
     });
     
@@ -223,14 +313,27 @@ async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 've
         paramsType: [],
         paramsValue: []  // Empty array for no parameters
       });
-      console.error('[WorkArea] SystemParametersInfoW failed with error code:', errorCode);
-      // Free the pointer before throwing
+      
+      // Free the pointer before fallback
       ffiRs.freePointer({
         paramsType: [RECT],
         paramsValue: rectPointer,
         pointerType: ffiRs.PointerType.CPointer
       });
-      throw new Error(`SystemParametersInfoW returned false (error code: ${errorCode})`);
+      
+      // Error 203 = ERROR_NO_MORE_ITEMS (system cannot apply work area change)
+      if (errorCode === 203) {
+        console.warn('[WorkArea] SystemParametersInfoW failed with error 203 (ERROR_NO_MORE_ITEMS)');
+        console.warn('[WorkArea] This may indicate permissions issue or display conflict');
+        console.warn('[WorkArea] Falling back to window-level positioning');
+        useWindowLevelPositioning(window);
+        return;
+      }
+      
+      console.error('[WorkArea] SystemParametersInfoW failed with error code:', errorCode);
+      console.warn('[WorkArea] Falling back to window-level positioning');
+      useWindowLevelPositioning(window);
+      return;
     }
     
     // Free the pointer after use
@@ -241,10 +344,11 @@ async function reserveWorkArea(window: BrowserWindow, layout: 'horizontal' | 've
     });
     
     workAreaReserved = true;
-    console.log('[WorkArea] Work area reserved successfully');
+    console.log('[WorkArea] Work area reserved successfully via SystemParametersInfoW');
   } catch (error) {
     console.error('[WorkArea] Failed to reserve work area:', error);
-    // Continue without work area reservation - app will still work, just won't reserve space
+    console.warn('[WorkArea] Falling back to window-level positioning');
+    useWindowLevelPositioning(window);
   }
 }
 
@@ -367,6 +471,9 @@ const createWindow = async () => {
     titleBarStyle: 'hidden',
     x: layout === 'horizontal' ? 0 : undefined,
     y: layout === 'vertical' ? 0 : undefined,
+    // Use 'toolbar' type hint on Windows to make other apps respect this window
+    type: process.platform === 'win32' ? 'toolbar' : undefined,
+    alwaysOnTop: false, // Will be set by reserveWorkArea if needed
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
