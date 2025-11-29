@@ -1,0 +1,42 @@
+{
+  "name": "time-logger-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone Electron build of the DocuFrame floating task timer.",
+  "main": "dist-electron/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently \"vite --config vite.config.ts\" \"wait-on http://localhost:5173 && npm run start-electron\"",
+    "start-electron": "npm run build-electron && electron dist-electron/main.js",
+    "build-renderer": "vite build --config vite.config.ts",
+    "build-electron": "tsc -p electron/tsconfig.json",
+    "build": "npm run build-renderer && npm run build-electron",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "start": "npm run build-electron && electron dist-electron/main.js"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "csv-parse": "^5.6.0",
+    "framer-motion": "^11.0.5",
+    "get-windows": "^9.2.3",
+    "lucide-react": "^0.513.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.5",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^29.1.0",
+    "electron-builder": "^26.0.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.1.0",
+    "wait-on": "^7.2.0"
+  }
+}
+
