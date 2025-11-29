@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { Plus } from 'lucide-react';
 import { settingsService } from '../services/settings';
+import { useLayout } from '../contexts/LayoutContext';
 
 interface WorkShiftInfographicProps {
   onEditTask?: (taskId: string) => Promise<void>;
@@ -30,6 +31,7 @@ const NON_BILLABLE_TASKS = [
 ];
 
 const WorkShiftInfographic: React.FC<WorkShiftInfographicProps> = ({ onEditTask, onAddCustomTask }) => {
+  const { layout } = useLayout();
   const [workShiftStart, setWorkShiftStart] = useState('06:00');
   const [workShiftEnd, setWorkShiftEnd] = useState('15:00');
   const [productivityTarget, setProductivityTarget] = useState(27000);
@@ -197,7 +199,17 @@ const WorkShiftInfographic: React.FC<WorkShiftInfographicProps> = ({ onEditTask,
   }, [shiftDurationSeconds, tasks]);
 
   return (
-    <Flex direction="column" w="320px" px={3} py={3} bg="gray.800" borderLeft="1px solid" borderColor="whiteAlpha.100" gap={3}>
+    <Flex 
+      direction="column" 
+      w={layout === 'vertical' ? '100%' : '320px'} 
+      px={3} 
+      py={3} 
+      bg="gray.800" 
+      borderLeft={layout === 'horizontal' ? '1px solid' : 'none'}
+      borderTop={layout === 'vertical' ? '1px solid' : 'none'}
+      borderColor="whiteAlpha.100" 
+      gap={3}
+    >
       <Flex align="center" justify="space-between" gap={2}>
         <Flex align="center" gap={2}>
           <Badge

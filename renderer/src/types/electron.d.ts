@@ -15,6 +15,7 @@ interface ElectronAPI {
   windowMinimize: () => void;
   windowMaximize: () => void;
   windowClose: () => void;
+  windowSetLayout: (layout: 'horizontal' | 'vertical') => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

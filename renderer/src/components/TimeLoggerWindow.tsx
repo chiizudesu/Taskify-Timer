@@ -32,6 +32,7 @@ import SettingsModal from './SettingsModal';
 import TitleBar from './TitleBar';
 import { taskTimerService, Task, TimerState } from '../services/taskTimer';
 import { settingsService } from '../services/settings';
+import { useLayout } from '../contexts/LayoutContext';
 
 const NON_BILLABLE_TASKS = [
   'Internal - Meetings',
@@ -47,6 +48,7 @@ const formatDurationInput = (value: string): string => {
 };
 
 const TimeLoggerWindow = () => {
+  const { layout } = useLayout();
   const [timerState, setTimerState] = useState<TimerState>({ currentTask: null, isRunning: false, isPaused: false });
   const [taskName, setTaskName] = useState('New Task');
   const [currentTime, setCurrentTime] = useState(0);
@@ -573,216 +575,429 @@ const TimeLoggerWindow = () => {
       <Box w="100%" h="100%" bg="gray.900" color="white" display="flex" flexDirection="column">
         <TitleBar />
         
-        <Flex flex={1} h="calc(100% - 32px)" bg="gray.900">
-          {/* Left Sidebar - Control Buttons */}
-          <Flex 
-            direction="column" 
-            w="48px" 
-            bg="gray.800" 
-            borderRight="1px solid" 
-            borderColor="whiteAlpha.100"
-            align="center"
-            py={2}
-            gap={2}
-          >
-            <Tooltip label="Start" placement="right">
-              <IconButton
-                aria-label="Start timer"
-                icon={<Play size={16} />}
-                onClick={handleStartTimer}
-                isDisabled={timerState.isRunning && !timerState.isPaused}
-                colorScheme="green"
-                variant="outline"
-                borderColor="green.400"
-                size="sm"
-                w="36px"
-                h="36px"
-                borderRadius="sm"
-              />
-            </Tooltip>
-            <Tooltip label="Pause" placement="right">
-              <IconButton
-                aria-label="Pause timer"
-                icon={<Pause size={16} />}
-                onClick={handlePauseTimer}
-                isDisabled={!timerState.isRunning || timerState.isPaused}
-                colorScheme="yellow"
-                variant="outline"
-                borderColor="yellow.400"
-                size="sm"
-                w="36px"
-                h="36px"
-                borderRadius="sm"
-              />
-            </Tooltip>
-            <Tooltip label="Stop" placement="right">
-              <IconButton
-                aria-label="Stop timer"
-                icon={<Square size={16} />}
-                onClick={handleStopTimer}
-                isDisabled={!timerState.isRunning}
-                colorScheme="red"
-                variant="outline"
-                borderColor="red.400"
-                size="sm"
-                w="36px"
-                h="36px"
-                borderRadius="sm"
-              />
-            </Tooltip>
-            <Tooltip label="Settings" placement="right">
-              <IconButton
-                aria-label="Open settings"
-                icon={<SettingsIcon size={16} />}
-                onClick={settingsModal.onOpen}
-                variant="outline"
-                borderColor="gray.500"
-                colorScheme="gray"
-                size="sm"
-                w="36px"
-                h="36px"
-                borderRadius="sm"
-                mt="auto"
-              />
-            </Tooltip>
-          </Flex>
+        {layout === 'horizontal' ? (
+          <Flex flex={1} h="calc(100% - 32px)" bg="gray.900">
+            {/* Left Sidebar - Control Buttons */}
+            <Flex 
+              direction="column" 
+              w="48px" 
+              bg="gray.800" 
+              borderRight="1px solid" 
+              borderColor="whiteAlpha.100"
+              align="center"
+              py={2}
+              gap={2}
+            >
+              <Tooltip label="Start" placement="right">
+                <IconButton
+                  aria-label="Start timer"
+                  icon={<Play size={16} />}
+                  onClick={handleStartTimer}
+                  isDisabled={timerState.isRunning && !timerState.isPaused}
+                  colorScheme="green"
+                  variant="outline"
+                  borderColor="green.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Pause" placement="right">
+                <IconButton
+                  aria-label="Pause timer"
+                  icon={<Pause size={16} />}
+                  onClick={handlePauseTimer}
+                  isDisabled={!timerState.isRunning || timerState.isPaused}
+                  colorScheme="yellow"
+                  variant="outline"
+                  borderColor="yellow.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Stop" placement="right">
+                <IconButton
+                  aria-label="Stop timer"
+                  icon={<Square size={16} />}
+                  onClick={handleStopTimer}
+                  isDisabled={!timerState.isRunning}
+                  colorScheme="red"
+                  variant="outline"
+                  borderColor="red.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Settings" placement="right">
+                <IconButton
+                  aria-label="Open settings"
+                  icon={<SettingsIcon size={16} />}
+                  onClick={settingsModal.onOpen}
+                  variant="outline"
+                  borderColor="gray.500"
+                  colorScheme="gray"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                  mt="auto"
+                />
+              </Tooltip>
+            </Flex>
 
-          {/* Center Area - Timer Display */}
-          <Flex flex={1} direction="column" bg="gray.900" p={4}>
-            {/* Search Bar */}
-            <Box ref={taskSearchContainerRef} position="relative" mb={4}>
-              <InputGroup>
-                <Input
-                  ref={taskSearchInputRef}
-                  value={timerState.isRunning ? taskName : taskSearchValue}
-                  onChange={(e) => {
-                    if (!timerState.isRunning) {
-                      const value = e.target.value;
-                      setTaskSearchValue(value);
-                      setTaskName(value);
-                      setIsTaskSearchOpen(true);
-                      handleTaskSearch(value);
-                    }
-                  }}
-                  onFocus={() => {
-                    if (!timerState.isRunning) {
-                      setIsTaskSearchOpen(true);
-                      if (taskSearchValue) {
-                        handleTaskSearch(taskSearchValue);
+            {/* Center Area - Timer Display */}
+            <Flex flex={1} direction="column" bg="gray.900" p={4}>
+              {/* Search Bar */}
+              <Box ref={taskSearchContainerRef} position="relative" mb={4}>
+                <InputGroup>
+                  <Input
+                    ref={taskSearchInputRef}
+                    value={timerState.isRunning ? taskName : taskSearchValue}
+                    onChange={(e) => {
+                      if (!timerState.isRunning) {
+                        const value = e.target.value;
+                        setTaskSearchValue(value);
+                        setTaskName(value);
+                        setIsTaskSearchOpen(true);
+                        handleTaskSearch(value);
                       }
-                    }
-                  }}
-                  placeholder="Search task or client..."
-                  fontSize="sm"
-                  bg="whiteAlpha.100"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  color="white"
-                  pl={9}
-                  disabled={timerState.isRunning}
-                  h="32px"
-                />
-                <InputLeftElement pointerEvents="none" pl={3} h="32px">
-                  <Icon as={Search} boxSize={4} color="gray.400" />
-                </InputLeftElement>
-                <InputRightElement pr={3} h="32px">
-                  {isTaskSearchLoading && <Spinner size="xs" color="blue.400" />}
-                </InputRightElement>
-              </InputGroup>
+                    }}
+                    onFocus={() => {
+                      if (!timerState.isRunning) {
+                        setIsTaskSearchOpen(true);
+                        if (taskSearchValue) {
+                          handleTaskSearch(taskSearchValue);
+                        }
+                      }
+                    }}
+                    placeholder="Search task or client..."
+                    fontSize="sm"
+                    bg="whiteAlpha.100"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    color="white"
+                    pl={9}
+                    disabled={timerState.isRunning}
+                    h="32px"
+                  />
+                  <InputLeftElement pointerEvents="none" pl={3} h="32px">
+                    <Icon as={Search} boxSize={4} color="gray.400" />
+                  </InputLeftElement>
+                  <InputRightElement pr={3} h="32px">
+                    {isTaskSearchLoading && <Spinner size="xs" color="blue.400" />}
+                  </InputRightElement>
+                </InputGroup>
 
-              {isTaskSearchOpen && !timerState.isRunning && (isTaskSearchLoading || taskSearchResults.length > 0 || taskSearchValue) && (
-                <Box
-                  position="absolute"
-                  mt={1}
-                  bg="gray.800"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                  borderRadius="md"
-                  boxShadow="0 4px 12px rgba(0,0,0,0.4)"
-                  maxH="200px"
-                  overflowY="auto"
-                  zIndex={10}
-                  w="100%"
-                >
-                  {isTaskSearchLoading ? (
-                    <Flex justify="center" align="center" py={4}>
-                      <Text color="gray.500" fontSize="sm">
-                        Searching...
-                      </Text>
-                    </Flex>
-                  ) : taskSearchResults.length > 0 ? (
-                    <VStack spacing={0} align="stretch" p={1}>
-                      {taskSearchResults.map((result, idx) => (
-                        <Box
-                          key={`${result.name}-${idx}`}
-                          px={3}
-                          py={2}
-                          cursor="pointer"
-                          _hover={{ bg: 'whiteAlpha.100' }}
-                          onClick={() => handleTaskSelect(result.name)}
-                          borderBottom={idx < taskSearchResults.length - 1 ? '1px solid' : 'none'}
-                          borderColor="whiteAlpha.100"
-                        >
-                          <Flex align="center" gap={2}>
-                            <Text fontSize="12px" fontWeight="500" color="white">
-                              {result.name}
-                            </Text>
-                            {result.type === 'internal' && (
-                              <Badge colorScheme="orange" fontSize="9px" px={1.5} py={0}>
-                                Internal
-                              </Badge>
-                            )}
-                          </Flex>
-                        </Box>
-                      ))}
-                    </VStack>
-                  ) : taskSearchValue ? (
-                    <Box textAlign="center" py={4}>
-                      <Text color="gray.500" fontSize="sm">
-                        No results found
-                      </Text>
-                    </Box>
-                  ) : null}
-                </Box>
-              )}
-            </Box>
-
-            {/* Timer Display */}
-            <Flex flex={1} direction="column" justify="center" align="flex-start" gap={3}>
-              <Text fontSize="6xl" fontWeight="700" fontFamily="mono" color="white" letterSpacing="0.05em">
-                {taskTimerService.formatDuration(currentTime)}
-              </Text>
-              
-              {/* Progress Bar */}
-              <Box w="100%" maxW="600px" h="8px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden">
-                <Box
-                  h="100%"
-                  w={`${progressPercent}%`}
-                  bg={timerState.isRunning ? (timerState.isPaused ? 'yellow.400' : timerColor) : 'gray.500'}
-                  borderRadius="full"
-                  transition="width 0.3s ease"
-                />
+                {isTaskSearchOpen && !timerState.isRunning && (isTaskSearchLoading || taskSearchResults.length > 0 || taskSearchValue) && (
+                  <Box
+                    position="absolute"
+                    mt={1}
+                    bg="gray.800"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    borderRadius="md"
+                    boxShadow="0 4px 12px rgba(0,0,0,0.4)"
+                    maxH="200px"
+                    overflowY="auto"
+                    zIndex={10}
+                    w="100%"
+                  >
+                    {isTaskSearchLoading ? (
+                      <Flex justify="center" align="center" py={4}>
+                        <Text color="gray.500" fontSize="sm">
+                          Searching...
+                        </Text>
+                      </Flex>
+                    ) : taskSearchResults.length > 0 ? (
+                      <VStack spacing={0} align="stretch" p={1}>
+                        {taskSearchResults.map((result, idx) => (
+                          <Box
+                            key={`${result.name}-${idx}`}
+                            px={3}
+                            py={2}
+                            cursor="pointer"
+                            _hover={{ bg: 'whiteAlpha.100' }}
+                            onClick={() => handleTaskSelect(result.name)}
+                            borderBottom={idx < taskSearchResults.length - 1 ? '1px solid' : 'none'}
+                            borderColor="whiteAlpha.100"
+                          >
+                            <Flex align="center" gap={2}>
+                              <Text fontSize="12px" fontWeight="500" color="white">
+                                {result.name}
+                              </Text>
+                              {result.type === 'internal' && (
+                                <Badge colorScheme="orange" fontSize="9px" px={1.5} py={0}>
+                                  Internal
+                                </Badge>
+                              )}
+                            </Flex>
+                          </Box>
+                        ))}
+                      </VStack>
+                    ) : taskSearchValue ? (
+                      <Box textAlign="center" py={4}>
+                        <Text color="gray.500" fontSize="sm">
+                          No results found
+                        </Text>
+                      </Box>
+                    ) : null}
+                  </Box>
+                )}
               </Box>
 
-              {/* Task Identifier */}
-              {taskName && (
-                <Flex align="center" gap={2}>
-                  <Text fontSize="sm" color="gray.400">
-                    ({taskName})
-                  </Text>
-                  {timerState.currentTask?.id && (
-                    <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm">
-                      {timerState.currentTask.id.slice(-3)}
-                    </Badge>
-                  )}
-                </Flex>
-              )}
-            </Flex>
-          </Flex>
+              {/* Timer Display */}
+              <Flex flex={1} direction="column" justify="center" align="center" gap={3}>
+                <Text fontSize="6xl" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" color="white" letterSpacing="0.05em" textAlign="center">
+                  {taskTimerService.formatDuration(currentTime)}
+                </Text>
+                
+                {/* Progress Bar */}
+                <Box w="100%" maxW="600px" h="8px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden">
+                  <Box
+                    h="100%"
+                    w={`${progressPercent}%`}
+                    bg={timerState.isRunning ? (timerState.isPaused ? 'yellow.400' : timerColor) : 'gray.500'}
+                    borderRadius="full"
+                    transition="width 0.3s ease"
+                  />
+                </Box>
 
-          {/* Right Panel - Summary */}
-          <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
-        </Flex>
+                {/* Task Identifier */}
+                {taskName && (
+                  <Flex align="center" gap={2}>
+                    <Text fontSize="sm" color="gray.400">
+                      ({taskName})
+                    </Text>
+                    {timerState.currentTask?.id && (
+                      <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm">
+                        {timerState.currentTask.id.slice(-3)}
+                      </Badge>
+                    )}
+                  </Flex>
+                )}
+              </Flex>
+            </Flex>
+
+            {/* Right Panel - Summary */}
+            <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
+          </Flex>
+        ) : (
+          <Flex flex={1} h="calc(100% - 32px)" bg="gray.900" direction="column">
+            {/* Center Area - Timer Display */}
+            <Flex flex={1} direction="column" bg="gray.900" p={4}>
+              {/* Search Bar */}
+              <Box ref={taskSearchContainerRef} position="relative" mb={4}>
+                <InputGroup>
+                  <Input
+                    ref={taskSearchInputRef}
+                    value={timerState.isRunning ? taskName : taskSearchValue}
+                    onChange={(e) => {
+                      if (!timerState.isRunning) {
+                        const value = e.target.value;
+                        setTaskSearchValue(value);
+                        setTaskName(value);
+                        setIsTaskSearchOpen(true);
+                        handleTaskSearch(value);
+                      }
+                    }}
+                    onFocus={() => {
+                      if (!timerState.isRunning) {
+                        setIsTaskSearchOpen(true);
+                        if (taskSearchValue) {
+                          handleTaskSearch(taskSearchValue);
+                        }
+                      }
+                    }}
+                    placeholder="Search task or client..."
+                    fontSize="sm"
+                    bg="whiteAlpha.100"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    color="white"
+                    pl={9}
+                    disabled={timerState.isRunning}
+                    h="32px"
+                  />
+                  <InputLeftElement pointerEvents="none" pl={3} h="32px">
+                    <Icon as={Search} boxSize={4} color="gray.400" />
+                  </InputLeftElement>
+                  <InputRightElement pr={3} h="32px">
+                    {isTaskSearchLoading && <Spinner size="xs" color="blue.400" />}
+                  </InputRightElement>
+                </InputGroup>
+
+                {isTaskSearchOpen && !timerState.isRunning && (isTaskSearchLoading || taskSearchResults.length > 0 || taskSearchValue) && (
+                  <Box
+                    position="absolute"
+                    mt={1}
+                    bg="gray.800"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    borderRadius="md"
+                    boxShadow="0 4px 12px rgba(0,0,0,0.4)"
+                    maxH="200px"
+                    overflowY="auto"
+                    zIndex={10}
+                    w="100%"
+                  >
+                    {isTaskSearchLoading ? (
+                      <Flex justify="center" align="center" py={4}>
+                        <Text color="gray.500" fontSize="sm">
+                          Searching...
+                        </Text>
+                      </Flex>
+                    ) : taskSearchResults.length > 0 ? (
+                      <VStack spacing={0} align="stretch" p={1}>
+                        {taskSearchResults.map((result, idx) => (
+                          <Box
+                            key={`${result.name}-${idx}`}
+                            px={3}
+                            py={2}
+                            cursor="pointer"
+                            _hover={{ bg: 'whiteAlpha.100' }}
+                            onClick={() => handleTaskSelect(result.name)}
+                            borderBottom={idx < taskSearchResults.length - 1 ? '1px solid' : 'none'}
+                            borderColor="whiteAlpha.100"
+                          >
+                            <Flex align="center" gap={2}>
+                              <Text fontSize="12px" fontWeight="500" color="white">
+                                {result.name}
+                              </Text>
+                              {result.type === 'internal' && (
+                                <Badge colorScheme="orange" fontSize="9px" px={1.5} py={0}>
+                                  Internal
+                                </Badge>
+                              )}
+                            </Flex>
+                          </Box>
+                        ))}
+                      </VStack>
+                    ) : taskSearchValue ? (
+                      <Box textAlign="center" py={4}>
+                        <Text color="gray.500" fontSize="sm">
+                          No results found
+                        </Text>
+                      </Box>
+                    ) : null}
+                  </Box>
+                )}
+              </Box>
+
+              {/* Timer Display */}
+              <Flex flex={1} direction="column" justify="center" align="center" gap={3}>
+                <Text fontSize="6xl" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" color="white" letterSpacing="0.05em" textAlign="center">
+                  {taskTimerService.formatDuration(currentTime)}
+                </Text>
+                
+                {/* Progress Bar */}
+                <Box w="100%" maxW="600px" h="8px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden">
+                  <Box
+                    h="100%"
+                    w={`${progressPercent}%`}
+                    bg={timerState.isRunning ? (timerState.isPaused ? 'yellow.400' : timerColor) : 'gray.500'}
+                    borderRadius="full"
+                    transition="width 0.3s ease"
+                  />
+                </Box>
+
+                {/* Task Identifier */}
+                {taskName && (
+                  <Flex align="center" gap={2}>
+                    <Text fontSize="sm" color="gray.400">
+                      ({taskName})
+                    </Text>
+                    {timerState.currentTask?.id && (
+                      <Badge bg="purple.500" color="white" fontSize="xs" px={2} py={0.5} borderRadius="sm">
+                        {timerState.currentTask.id.slice(-3)}
+                      </Badge>
+                    )}
+                  </Flex>
+                )}
+              </Flex>
+            </Flex>
+
+            {/* Bottom Control Buttons - Horizontal Bar */}
+            <Flex 
+              direction="row" 
+              h="48px" 
+              bg="gray.800" 
+              borderTop="1px solid" 
+              borderColor="whiteAlpha.100"
+              align="center"
+              justify="center"
+              px={2}
+              gap={2}
+            >
+              <Tooltip label="Start" placement="top">
+                <IconButton
+                  aria-label="Start timer"
+                  icon={<Play size={16} />}
+                  onClick={handleStartTimer}
+                  isDisabled={timerState.isRunning && !timerState.isPaused}
+                  colorScheme="green"
+                  variant="outline"
+                  borderColor="green.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Pause" placement="top">
+                <IconButton
+                  aria-label="Pause timer"
+                  icon={<Pause size={16} />}
+                  onClick={handlePauseTimer}
+                  isDisabled={!timerState.isRunning || timerState.isPaused}
+                  colorScheme="yellow"
+                  variant="outline"
+                  borderColor="yellow.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Stop" placement="top">
+                <IconButton
+                  aria-label="Stop timer"
+                  icon={<Square size={16} />}
+                  onClick={handleStopTimer}
+                  isDisabled={!timerState.isRunning}
+                  colorScheme="red"
+                  variant="outline"
+                  borderColor="red.400"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+              <Tooltip label="Settings" placement="top">
+                <IconButton
+                  aria-label="Open settings"
+                  icon={<SettingsIcon size={16} />}
+                  onClick={settingsModal.onOpen}
+                  variant="outline"
+                  borderColor="gray.500"
+                  colorScheme="gray"
+                  size="sm"
+                  w="36px"
+                  h="36px"
+                  borderRadius="sm"
+                />
+              </Tooltip>
+            </Flex>
+
+            {/* WorkShiftInfographic - Full Width Below */}
+            <WorkShiftInfographic onEditTask={handleOpenEditModal} onAddCustomTask={handleOpenAddCustomTaskModal} />
+          </Flex>
+        )}
       </Box>
 
       {/* Edit Task Modal */}

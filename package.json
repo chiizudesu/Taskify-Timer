@@ -6,7 +6,7 @@
   "main": "dist-electron/main.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "concurrently \"vite --config vite.config.ts\" \"wait-on http://localhost:5173 && npm run start-electron\"",
+    "dev": "concurrently \"vite --config vite.config.ts\" \"wait-on http://localhost:5183 && npm run start-electron\"",
     "start-electron": "npm run build-electron && electron dist-electron/main.js",
     "build-renderer": "vite build --config vite.config.ts",
     "build-electron": "tsc -p electron/tsconfig.json",

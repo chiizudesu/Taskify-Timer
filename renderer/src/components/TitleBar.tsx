@@ -1,18 +1,21 @@
 import React from 'react';
-import { Box, Flex, IconButton, Text } from '@chakra-ui/react';
-import { Minus, Square, X } from 'lucide-react';
+import { Box, Flex, IconButton, Text, Tooltip } from '@chakra-ui/react';
+import { LayoutGrid, LayoutList, X } from 'lucide-react';
+import { useLayout } from '../contexts/LayoutContext';
 
 const TitleBar = () => {
-  const handleMinimize = () => {
-    (window.electronAPI as any)?.windowMinimize?.();
-  };
-
-  const handleMaximize = () => {
-    (window.electronAPI as any)?.windowMaximize?.();
-  };
+  const { layout, setLayout } = useLayout();
 
   const handleClose = () => {
     (window.electronAPI as any)?.windowClose?.();
+  };
+
+  const handleHorizontalLayout = () => {
+    setLayout('horizontal');
+  };
+
+  const handleVerticalLayout = () => {
+    setLayout('vertical');
   };
 
   return (
@@ -32,30 +35,36 @@ const TitleBar = () => {
         </Text>
       </Flex>
       <Flex style={{ WebkitAppRegion: 'no-drag' } as any}>
-        <IconButton
-          aria-label="Minimize"
-          icon={<Minus size={12} />}
-          size="xs"
-          variant="ghost"
-          onClick={handleMinimize}
-          color="gray.400"
-          _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
-          borderRadius={0}
-          h="32px"
-          w="46px"
-        />
-        <IconButton
-          aria-label="Maximize"
-          icon={<Square size={10} />}
-          size="xs"
-          variant="ghost"
-          onClick={handleMaximize}
-          color="gray.400"
-          _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
-          borderRadius={0}
-          h="32px"
-          w="46px"
-        />
+        <Tooltip label="Switch to horizontal layout" placement="bottom">
+          <IconButton
+            aria-label="Horizontal layout"
+            icon={<LayoutGrid size={12} />}
+            size="xs"
+            variant="ghost"
+            onClick={handleHorizontalLayout}
+            color={layout === 'horizontal' ? 'blue.400' : 'gray.400'}
+            bg={layout === 'horizontal' ? 'whiteAlpha.100' : 'transparent'}
+            _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+            borderRadius={0}
+            h="32px"
+            w="46px"
+          />
+        </Tooltip>
+        <Tooltip label="Switch to vertical layout" placement="bottom">
+          <IconButton
+            aria-label="Vertical layout"
+            icon={<LayoutList size={12} />}
+            size="xs"
+            variant="ghost"
+            onClick={handleVerticalLayout}
+            color={layout === 'vertical' ? 'blue.400' : 'gray.400'}
+            bg={layout === 'vertical' ? 'whiteAlpha.100' : 'transparent'}
+            _hover={{ bg: 'whiteAlpha.200', color: 'white' }}
+            borderRadius={0}
+            h="32px"
+            w="46px"
+          />
+        </Tooltip>
         <IconButton
           aria-label="Close"
           icon={<X size={12} />}
